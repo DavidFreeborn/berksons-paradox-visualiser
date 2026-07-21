@@ -3,313 +3,409 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Berkson's Paradox Visualiser</title>
+  <title>Berkson's Paradox / Explaining Away Effect | David Freeborn</title>
+  <meta name="description" content="An interactive demonstration of how selection effects can create misleading correlations in selected samples." />
   <link rel="canonical" href="https://www.davidpeterwallisfreeborn.com/fun/berksons-paradox/" />
+  <meta property="og:title" content="Berkson's Paradox / Explaining Away Effect" />
+  <meta property="og:description" content="An interactive demonstration of how selection effects can create misleading correlations in selected samples." />
+  <meta property="og:url" content="https://www.davidpeterwallisfreeborn.com/fun/berksons-paradox/" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Berkson's Paradox / Explaining Away Effect" />
+  <meta name="twitter:description" content="An interactive demonstration of how selection effects can create misleading correlations in selected samples." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #f1f5f9;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #475569;
-      --line: #cbd5e1;
-      --blue: #2563eb;
-      --red: #dc2626;
-      --purple: #7c3aed;
-      --grey: #cbd5e1;
+      --ink: #000000;
+      --ink-secondary: #333333;
+      --paper: #ffffff;
+      --paper-subtle: #fafafa;
+      --border: #e0e0e0;
+      --muted: #666666;
+      --data-selected: #2563eb;
+      --data-rejected: #cccccc;
+      --data-fit: #c41e3a;
+      --data-boundary: #6b21a8;
+      --font-serif: "EB Garamond", Georgia, "Times New Roman", serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     }
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: var(--font-serif);
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.6;
     }
+
+    /* Page container */
     .page {
-      max-width: 1380px;
+      max-width: 1320px;
       margin: 0 auto;
-      padding: 24px;
+      padding: 2rem;
     }
-    .header, .card {
-      background: var(--card);
-      border: 1px solid #e2e8f0;
-      border-radius: 24px;
-      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    @media (max-width: 768px) {
+      .page { padding: 1rem; }
     }
-    .header {
-      padding: 28px;
-      margin-bottom: 24px;
+
+    /* Header */
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
     }
     h1 {
-      margin: 0;
-      font-size: clamp(2rem, 4vw, 3rem);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
+      margin: 0 0 0.75rem 0;
+      font-family: var(--font-serif);
+      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+      font-weight: 400;
+      line-height: 1.2;
     }
-    .subtitle {
-      margin-top: 14px;
-      max-width: 1000px;
-      font-size: 1.05rem;
-      line-height: 1.7;
-      color: var(--muted);
+    .intro {
+      max-width: 72ch;
+      font-size: 1.0625rem;
+      color: var(--ink-secondary);
     }
+    .intro code {
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      background: var(--paper-subtle);
+      padding: 0.1em 0.3em;
+      border: 1px solid var(--border);
+    }
+
+    /* Main layout */
     .layout {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) 360px;
-      gap: 24px;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 2rem;
       align-items: start;
     }
-    @media (max-width: 1100px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 1000px) {
+      .layout { grid-template-columns: 1fr; }
     }
-    .plot-card {
-      padding: 18px;
+
+    /* Plot area */
+    .plot-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
     }
-    .plot-wrap {
-      width: 100%;
-      overflow: hidden;
-      border-radius: 20px;
-      background: #fff;
+    .canvas-wrap {
+      background: var(--paper);
+      border: 1px solid var(--border);
     }
     canvas {
+      display: block;
       width: 100%;
       height: auto;
-      display: block;
     }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
-      margin-top: 18px;
-    }
-    @media (max-width: 800px) {
-      .stats {
-        grid-template-columns: 1fr;
-      }
-    }
-    .stat {
-      background: var(--card);
-      border: 1px solid #e2e8f0;
-      border-radius: 20px;
-      padding: 16px;
-    }
-    .stat-label {
-      color: #64748b;
-      font-size: 0.95rem;
-    }
-    .stat-value {
-      margin-top: 8px;
-      font-size: 2rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-    }
-    .stat-detail {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
+
+    /* Legend */
     .legend {
-      margin-top: 12px;
       display: flex;
       flex-wrap: wrap;
-      gap: 14px;
-      align-items: center;
+      gap: 0.5rem 1.25rem;
+      font-family: var(--font-sans);
+      font-size: 0.8125rem;
       color: var(--muted);
-      font-size: 0.95rem;
     }
-    .legend-item { display: inline-flex; align-items: center; gap: 8px; }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
     .swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      display: inline-block;
+      width: 10px;
+      height: 10px;
+      flex-shrink: 0;
     }
-    .side {
+    .swatch-line {
+      width: 16px;
+      height: 3px;
+      flex-shrink: 0;
+    }
+
+    /* Statistics */
+    .stats {
       display: grid;
-      gap: 16px;
+      grid-template-columns: auto 1fr;
+      gap: 0.25rem 1rem;
+      font-size: 0.9375rem;
+      padding: 0.75rem 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
     }
-    .controls {
-      padding: 20px;
+    .stats dt {
+      color: var(--muted);
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
     }
-    .controls h2 {
-      margin: 0 0 16px 0;
-      font-size: 1.2rem;
+    .stats dd {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
     }
+
+    /* Explanation text */
+    .mode-explanation {
+      font-size: 0.9375rem;
+      color: var(--ink-secondary);
+      min-height: 3em;
+    }
+
+    /* Controls panel */
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .controls-panel h2 {
+      margin: 0 0 0.5rem 0;
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      font-weight: 400;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Control groups */
     .control {
-      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
     }
-    .control:last-child { margin-bottom: 0; }
-    label {
+    .control label {
       display: flex;
       justify-content: space-between;
-      gap: 12px;
-      align-items: center;
-      font-weight: 600;
-      font-size: 0.96rem;
-      margin-bottom: 8px;
+      align-items: baseline;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--ink-secondary);
     }
-    .value {
+    .control .value {
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
       color: var(--muted);
-      font-weight: 600;
-      min-width: 70px;
+      min-width: 3.5em;
       text-align: right;
       font-variant-numeric: tabular-nums;
     }
     input[type="range"] {
       width: 100%;
-      accent-color: var(--blue);
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+      margin-top: 0.25rem;
     }
-    select, button {
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: var(--ink);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: var(--ink);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    input[type="range"]:focus-visible {
+      outline: none;
+    }
+    input[type="range"]:focus-visible::-webkit-slider-thumb {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
+    }
+    select {
       width: 100%;
-      border-radius: 16px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      font: inherit;
-      padding: 12px 14px;
-      color: var(--text);
+      padding: 0.5rem;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      color: var(--ink);
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    select:focus {
+      outline: none;
+      border-color: var(--ink);
     }
     button {
+      width: 100%;
+      padding: 0.625rem 1rem;
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--paper);
+      background: var(--ink);
+      border: 1px solid var(--ink);
+      border-radius: 2px;
       cursor: pointer;
-      background: var(--text);
-      color: white;
-      border-color: var(--text);
-      font-weight: 700;
+      transition: background 150ms ease;
     }
-    .help {
-      padding: 18px 20px;
-      color: var(--muted);
-      line-height: 1.65;
-      font-size: 0.97rem;
+    button:hover {
+      background: var(--ink-secondary);
     }
-    .help strong { color: var(--text); }
-    .footer-note {
-      margin-top: 16px;
-      color: #64748b;
-      font-size: 0.92rem;
-      line-height: 1.6;
+    button:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 2px;
     }
-    code {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      padding: 0.1em 0.35em;
-      border-radius: 7px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 0.93em;
+
+    /* Help panel */
+    .help-panel {
+      padding: 0.75rem;
+      background: var(--paper-subtle);
+      border: 1px solid var(--border);
+      font-size: 0.875rem;
+      color: var(--ink-secondary);
+    }
+    .help-panel strong {
+      color: var(--ink);
+    }
+    .help-panel code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--paper);
+      padding: 0.1em 0.25em;
+      border: 1px solid var(--border);
+    }
+
+    /* Back navigation */
+    .back-nav {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+    .back-nav a {
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      color: var(--ink);
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
   <div class="page">
-    <div class="header">
-      <h1>Berkson's Paradox Visualiser</h1>
-      <div class="subtitle">
+    <header>
+      <h1>Berkson's Paradox</h1>
+      <p class="intro">
         Berkson's paradox is the appearance of a spurious association after conditioning on a selection rule. Here, two Gaussian variables can look negatively correlated after conditioning on a combined threshold such as <code>aX + bY &gt; T</code>. It is also a case of the explaining away effect.
-      </div>
-    </div>
+      </p>
+    </header>
 
     <div class="layout">
-      <div>
-        <div class="card plot-card">
-          <div class="plot-wrap">
-            <canvas id="plot" width="960" height="660" aria-label="Interactive Berkson's paradox plot"></canvas>
-          </div>
-          <div class="legend">
-            <span class="legend-item"><span class="swatch" style="background:#2563eb"></span> selected cases</span>
-            <span class="legend-item"><span class="swatch" style="background:#cbd5e1"></span> rejected cases</span>
-            <span class="legend-item"><span class="swatch" style="background:#dc2626"></span> fitted line in selected sample</span>
-            <span class="legend-item"><span class="swatch" style="background:#7c3aed"></span> selection boundary</span>
-          </div>
-          <div class="footer-note" id="modeExplanation"></div>
+      <div class="plot-section">
+        <div class="canvas-wrap">
+          <canvas id="plot" width="960" height="660" aria-label="Interactive Berkson's paradox scatter plot showing the relationship between two variables under different selection rules"></canvas>
         </div>
 
-        <div class="stats">
-          <div class="stat">
-            <div class="stat-label">Population correlation</div>
-            <div class="stat-value" id="popR">r ≈ 0.00</div>
-            <div class="stat-detail">Estimated from the full simulated population</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Selected correlation</div>
-            <div class="stat-value" id="selR">r ≈ 0.00</div>
-            <div class="stat-detail">Estimated only from the blue points</div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">Selected cases</div>
-            <div class="stat-value" id="selN">0</div>
-            <div class="stat-detail" id="selPct">0% of the simulated population</div>
-          </div>
+        <div class="legend">
+          <span class="legend-item"><span class="swatch" style="background: var(--data-selected)"></span>selected cases</span>
+          <span class="legend-item"><span class="swatch" style="background: var(--data-rejected)"></span>rejected cases</span>
+          <span class="legend-item"><span class="swatch-line" style="background: var(--data-fit)"></span>fitted line (selected)</span>
+          <span class="legend-item"><span class="swatch-line" style="background: var(--data-boundary); opacity: 0.7"></span>selection boundary</span>
         </div>
+
+        <dl class="stats">
+          <dt>Population correlation</dt>
+          <dd id="popR">r = 0.00</dd>
+          <dt>Selected correlation</dt>
+          <dd id="selR">r = 0.00</dd>
+          <dt>Selected cases</dt>
+          <dd><span id="selN">0</span> <span style="color: var(--muted)">(<span id="selPct">0</span>%)</span></dd>
+        </dl>
+
+        <p class="mode-explanation" id="modeExplanation"></p>
       </div>
 
-      <div class="side">
-        <div class="card controls">
-          <h2>Controls</h2>
+      <aside class="controls-panel">
+        <h2>Parameters</h2>
 
-          <div class="control">
-            <label for="mode">Selection rule</label>
-            <select id="mode">
-              <option value="none">None</option>
-              <option value="x">X &gt; tₓ</option>
-              <option value="y">Y &gt; tᵧ</option>
-              <option value="both">X &gt; tₓ and Y &gt; tᵧ</option>
-              <option value="either">X &gt; tₓ or Y &gt; tᵧ</option>
-              <option value="sum" selected>aX + bY &gt; T</option>
-              <option value="band">|aX + bY - T| &lt; δ</option>
-            </select>
-          </div>
-
-          <div class="control">
-            <label for="rho">True population correlation, ρ <span class="value" id="rhoVal"></span></label>
-            <input id="rho" type="range" min="-0.60" max="0.80" step="0.01" value="0.18" />
-          </div>
-
-          <div class="control">
-            <label for="aCoeff">Coefficient a <span class="value" id="aVal"></span></label>
-            <input id="aCoeff" type="range" min="0.20" max="2.00" step="0.05" value="1.00" />
-          </div>
-
-          <div class="control">
-            <label for="bCoeff">Coefficient b <span class="value" id="bVal"></span></label>
-            <input id="bCoeff" type="range" min="0.20" max="2.00" step="0.05" value="1.00" />
-          </div>
-
-          <div class="control">
-            <label for="xThreshold">Threshold tₓ <span class="value" id="txVal"></span></label>
-            <input id="xThreshold" type="range" min="-1.50" max="3.00" step="0.05" value="1.20" />
-          </div>
-
-          <div class="control">
-            <label for="yThreshold">Threshold tᵧ <span class="value" id="tyVal"></span></label>
-            <input id="yThreshold" type="range" min="-1.50" max="3.00" step="0.05" value="1.20" />
-          </div>
-
-          <div class="control">
-            <label for="sumThreshold">Threshold T <span class="value" id="tVal"></span></label>
-            <input id="sumThreshold" type="range" min="-1.00" max="5.00" step="0.05" value="2.40" />
-          </div>
-
-          <div class="control">
-            <label for="delta">Band width δ <span class="value" id="deltaVal"></span></label>
-            <input id="delta" type="range" min="0.05" max="1.50" step="0.05" value="0.35" />
-          </div>
-
-          <div class="control">
-            <label for="nPoints">Number of simulated points <span class="value" id="nVal"></span></label>
-            <input id="nPoints" type="range" min="500" max="10000" step="500" value="3000" />
-          </div>
-
-          <div class="control">
-            <button id="resample">Resample points</button>
-          </div>
+        <div class="control">
+          <label for="mode">Selection rule</label>
+          <select id="mode">
+            <option value="none">None</option>
+            <option value="x">X &gt; tx</option>
+            <option value="y">Y &gt; ty</option>
+            <option value="both">X &gt; tx and Y &gt; ty</option>
+            <option value="either">X &gt; tx or Y &gt; ty</option>
+            <option value="sum" selected>aX + bY &gt; T</option>
+            <option value="band">|aX + bY - T| &lt; delta</option>
+          </select>
         </div>
 
-        <div class="card help">
-          <strong>Suggested demo:</strong><br />
-          Set <code>ρ</code> to about <code>0.20</code>. Compare <code>X &gt; tₓ</code> with <code>aX + bY &gt; T</code>. As you raise the threshold, the first typically stays positive in expectation, while the second can turn negative. Then try <code>|aX + bY - T| &lt; δ</code> to make the trade-off especially vivid.
+        <div class="control">
+          <label for="rho">True correlation rho <span class="value" id="rhoVal"></span></label>
+          <input id="rho" type="range" min="-0.60" max="0.80" step="0.01" value="0.18" />
         </div>
-      </div>
+
+        <div class="control">
+          <label for="aCoeff">Coefficient a <span class="value" id="aVal"></span></label>
+          <input id="aCoeff" type="range" min="0.20" max="2.00" step="0.05" value="1.00" />
+        </div>
+
+        <div class="control">
+          <label for="bCoeff">Coefficient b <span class="value" id="bVal"></span></label>
+          <input id="bCoeff" type="range" min="0.20" max="2.00" step="0.05" value="1.00" />
+        </div>
+
+        <div class="control">
+          <label for="xThreshold">Threshold tx <span class="value" id="txVal"></span></label>
+          <input id="xThreshold" type="range" min="-1.50" max="3.00" step="0.05" value="1.20" />
+        </div>
+
+        <div class="control">
+          <label for="yThreshold">Threshold ty <span class="value" id="tyVal"></span></label>
+          <input id="yThreshold" type="range" min="-1.50" max="3.00" step="0.05" value="1.20" />
+        </div>
+
+        <div class="control">
+          <label for="sumThreshold">Threshold T <span class="value" id="tVal"></span></label>
+          <input id="sumThreshold" type="range" min="-1.00" max="5.00" step="0.05" value="2.40" />
+        </div>
+
+        <div class="control">
+          <label for="delta">Band width delta <span class="value" id="deltaVal"></span></label>
+          <input id="delta" type="range" min="0.05" max="1.50" step="0.05" value="0.35" />
+        </div>
+
+        <div class="control">
+          <label for="nPoints">Sample size n <span class="value" id="nVal"></span></label>
+          <input id="nPoints" type="range" min="500" max="10000" step="500" value="3000" />
+        </div>
+
+        <div class="control">
+          <button id="resample">Resample</button>
+        </div>
+
+        <div class="help-panel">
+          <strong>Suggested exploration:</strong> Set <code>rho</code> to about <code>0.20</code>. Compare <code>X &gt; tx</code> with <code>aX + bY &gt; T</code>. As you raise the threshold, the first typically stays positive, while the second can turn negative. Then try <code>|aX + bY - T| &lt; delta</code> to make the trade-off especially vivid.
+        </div>
+      </aside>
     </div>
+
+    <nav class="back-nav">
+      <a href="/fun/">Back to Interactive Tools</a>
+    </nav>
   </div>
 
   <script>
@@ -341,6 +437,14 @@
     const selNEl = document.getElementById('selN');
     const selPctEl = document.getElementById('selPct');
     const modeExplanation = document.getElementById('modeExplanation');
+
+    // Colours
+    const COL_SELECTED = '#2563eb';
+    const COL_REJECTED = '#cccccc';
+    const COL_FIT = '#c41e3a';
+    const COL_BOUNDARY = '#6b21a8';
+    const COL_AXIS = '#333333';
+    const COL_GRID = '#e5e5e5';
 
     let seed = 12;
 
@@ -398,7 +502,7 @@
     }
 
     function formatNumber(x, digits = 2) {
-      return Number.isFinite(x) ? x.toFixed(digits) : 'not enough data';
+      return Number.isFinite(x) ? x.toFixed(digits) : 'n/a';
     }
 
     function getPredicate(mode, tx, ty, a, b, T, delta) {
@@ -413,13 +517,13 @@
     }
 
     function modeText(mode) {
-      if (mode === 'none') return 'No selection is applied, so the selected sample is the whole population.';
-      if (mode === 'x') return 'Conditioning on X > tₓ restricts the range of X, but does not generate the compensatory trade-off characteristic of Berkson\'s paradox.';
-      if (mode === 'y') return 'Conditioning on Y > tᵧ is the symmetric case for Y.';
-      if (mode === 'both') return 'Conditioning on X > tₓ and Y > tᵧ selects the upper-right corner. This can weaken correlation through range restriction, but it is not the classic Berkson pattern.';
-      if (mode === 'either') return 'Conditioning on X > tₓ or Y > tᵧ already introduces a compensatory structure, because being high on one variable can substitute for not being high on the other.';
-      if (mode === 'sum') return 'Conditioning on aX + bY > T is the classic combined-threshold form of Berkson\'s paradox. Among selected cases, a higher X can explain selection and reduce the need for a higher Y.';
-      if (mode === 'band') return 'Conditioning on |aX + bY - T| < δ makes the trade-off especially vivid, because selected cases lie near a fixed total.';
+      if (mode === 'none') return 'No selection is applied; the sample is the full population.';
+      if (mode === 'x') return 'Conditioning on X > tx restricts the range of X but does not generate the compensatory trade-off characteristic of Berkson\'s paradox.';
+      if (mode === 'y') return 'Conditioning on Y > ty is the symmetric case for Y.';
+      if (mode === 'both') return 'Conditioning on X > tx and Y > ty selects the upper-right corner. This can weaken correlation through range restriction, but is not the classic Berkson pattern.';
+      if (mode === 'either') return 'Conditioning on X > tx or Y > ty introduces a compensatory structure: being high on one variable can substitute for not being high on the other.';
+      if (mode === 'sum') return 'Conditioning on aX + bY > T is the classic form of Berkson\'s paradox. Among selected cases, a higher X can "explain" selection and reduce the inferred need for a higher Y.';
+      if (mode === 'band') return 'Conditioning on |aX + bY - T| < delta makes the trade-off especially vivid, because selected cases lie near a fixed total.';
       return '';
     }
 
@@ -454,10 +558,10 @@
 
       const popStats = stats(points);
       const selStats = stats(selected);
-      popREl.textContent = `r ≈ ${formatNumber(popStats.r)}`;
-      selREl.textContent = `r ≈ ${formatNumber(selStats.r)}`;
+      popREl.textContent = `r = ${formatNumber(popStats.r)}`;
+      selREl.textContent = `r = ${formatNumber(selStats.r)}`;
       selNEl.textContent = String(selected.length);
-      selPctEl.textContent = `${formatNumber((selected.length / points.length) * 100, 1)}% of the simulated population`;
+      selPctEl.textContent = formatNumber((selected.length / points.length) * 100, 1);
       modeExplanation.textContent = modeText(mode);
 
       const W = canvas.width;
@@ -466,7 +570,7 @@
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, W, H);
 
-      const margin = { left: 72, right: 28, top: 28, bottom: 72 };
+      const margin = { left: 64, right: 24, top: 24, bottom: 64 };
       const plotW = W - margin.left - margin.right;
       const plotH = H - margin.top - margin.bottom;
       const min = -3.5, max = 3.5;
@@ -474,8 +578,8 @@
       const sy = y => margin.top + ((max - y) / (max - min)) * plotH;
       const ticks = [-3, -2, -1, 0, 1, 2, 3];
 
-      ctx.strokeStyle = '#e2e8f0';
-      ctx.setLineDash([4, 6]);
+      // Grid lines
+      ctx.strokeStyle = COL_GRID;
       ctx.lineWidth = 1;
       for (const t of ticks) {
         ctx.beginPath();
@@ -487,10 +591,10 @@
         ctx.lineTo(W - margin.right, sy(t));
         ctx.stroke();
       }
-      ctx.setLineDash([]);
 
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 1.5;
+      // Axes
+      ctx.strokeStyle = COL_AXIS;
+      ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(margin.left, H - margin.bottom);
       ctx.lineTo(W - margin.right, H - margin.bottom);
@@ -500,46 +604,50 @@
       ctx.lineTo(margin.left, H - margin.bottom);
       ctx.stroke();
 
-      ctx.fillStyle = '#475569';
-      ctx.font = '16px Inter, sans-serif';
+      // Tick labels
+      ctx.fillStyle = '#666666';
+      ctx.font = '13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.textAlign = 'center';
       for (const t of ticks) {
-        ctx.fillText(String(t), sx(t), H - margin.bottom + 28);
+        ctx.fillText(String(t), sx(t), H - margin.bottom + 20);
       }
       ctx.textAlign = 'right';
       for (const t of ticks) {
-        ctx.fillText(String(t), margin.left - 12, sy(t) + 5);
+        ctx.fillText(String(t), margin.left - 10, sy(t) + 4);
       }
 
-      ctx.fillStyle = '#0f172a';
-      ctx.font = '18px Inter, sans-serif';
+      // Axis labels
+      ctx.fillStyle = COL_AXIS;
+      ctx.font = '14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('X, standardized', W / 2, H - 18);
+      ctx.fillText('X', W / 2, H - 14);
       ctx.save();
-      ctx.translate(24, H / 2);
+      ctx.translate(16, H / 2);
       ctx.rotate(-Math.PI / 2);
-      ctx.fillText('Y, standardized', 0, 0);
+      ctx.fillText('Y', 0, 0);
       ctx.restore();
 
+      // Selection boundary
       function drawBoundary() {
-        ctx.strokeStyle = '#7c3aed';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([8, 6]);
-        ctx.fillStyle = '#6d28d9';
-        ctx.font = '16px Inter, sans-serif';
+        ctx.strokeStyle = COL_BOUNDARY;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+        ctx.fillStyle = COL_BOUNDARY;
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         ctx.textAlign = 'left';
         if (mode === 'x') {
           ctx.beginPath();
           ctx.moveTo(sx(tx), margin.top);
           ctx.lineTo(sx(tx), H - margin.bottom);
           ctx.stroke();
-          ctx.fillText('X = tₓ', sx(tx) + 8, margin.top + 20);
+          ctx.fillText('X = tx', sx(tx) + 6, margin.top + 16);
         } else if (mode === 'y') {
           ctx.beginPath();
           ctx.moveTo(margin.left, sy(ty));
           ctx.lineTo(W - margin.right, sy(ty));
           ctx.stroke();
-          ctx.fillText('Y = tᵧ', W - margin.right - 90, sy(ty) - 10);
+          ctx.textAlign = 'right';
+          ctx.fillText('Y = ty', W - margin.right - 6, sy(ty) - 6);
         } else if (mode === 'both' || mode === 'either') {
           ctx.beginPath();
           ctx.moveTo(sx(tx), margin.top);
@@ -549,8 +657,9 @@
           ctx.moveTo(margin.left, sy(ty));
           ctx.lineTo(W - margin.right, sy(ty));
           ctx.stroke();
-          ctx.fillText('X = tₓ', sx(tx) + 8, margin.top + 20);
-          ctx.fillText('Y = tᵧ', W - margin.right - 90, sy(ty) - 10);
+          ctx.fillText('X = tx', sx(tx) + 6, margin.top + 16);
+          ctx.textAlign = 'right';
+          ctx.fillText('Y = ty', W - margin.right - 6, sy(ty) - 6);
         } else if (mode === 'sum' || mode === 'band') {
           const yAtMin = (T - a * min) / b;
           const yAtMax = (T - a * max) / b;
@@ -559,11 +668,12 @@
           ctx.lineTo(sx(max), sy(yAtMax));
           ctx.stroke();
           if (mode === 'band') {
+            ctx.strokeStyle = COL_BOUNDARY;
+            ctx.globalAlpha = 0.5;
             const yAtMinU = (T + delta - a * min) / b;
             const yAtMaxU = (T + delta - a * max) / b;
             const yAtMinL = (T - delta - a * min) / b;
             const yAtMaxL = (T - delta - a * max) / b;
-            ctx.strokeStyle = '#a78bfa';
             ctx.beginPath();
             ctx.moveTo(sx(min), sy(yAtMinU));
             ctx.lineTo(sx(max), sy(yAtMaxU));
@@ -572,35 +682,42 @@
             ctx.moveTo(sx(min), sy(yAtMinL));
             ctx.lineTo(sx(max), sy(yAtMaxL));
             ctx.stroke();
+            ctx.globalAlpha = 1;
           }
-          ctx.fillText('aX + bY = T', W - margin.right - 145, margin.top + 24);
+          ctx.textAlign = 'right';
+          ctx.fillText('aX + bY = T', W - margin.right - 6, margin.top + 16);
         }
         ctx.setLineDash([]);
       }
 
       drawBoundary();
 
-      ctx.fillStyle = 'rgba(203, 213, 225, 0.48)';
+      // Rejected points
+      ctx.fillStyle = COL_REJECTED;
       for (const p of rejected) {
         ctx.beginPath();
-        ctx.arc(sx(p.x), sy(p.y), 2.3, 0, Math.PI * 2);
+        ctx.arc(sx(p.x), sy(p.y), 2, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      ctx.fillStyle = 'rgba(37, 99, 235, 0.72)';
+      // Selected points
+      ctx.fillStyle = COL_SELECTED;
+      ctx.globalAlpha = 0.7;
       for (const p of selected) {
         ctx.beginPath();
-        ctx.arc(sx(p.x), sy(p.y), 2.7, 0, Math.PI * 2);
+        ctx.arc(sx(p.x), sy(p.y), 2.5, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.globalAlpha = 1;
 
+      // Fitted line
       if (Number.isFinite(selStats.slope)) {
         const x1 = min;
         const y1 = selStats.slope * x1 + selStats.intercept;
         const x2 = max;
         const y2 = selStats.slope * x2 + selStats.intercept;
-        ctx.strokeStyle = '#dc2626';
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = COL_FIT;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(sx(x1), sy(y1));
         ctx.lineTo(sx(x2), sy(y2));
@@ -613,8 +730,5 @@
     resampleEl.addEventListener('click', () => { seed += 1; draw(); });
     draw();
   </script>
-  <footer style="max-width:1380px;margin:24px auto;padding:0 24px;text-align:center;color:#475569;font-size:0.9rem;">
-    Created by <a href="https://www.davidpeterwallisfreeborn.com/fun/" style="color:#2563eb;">David Freeborn</a>. <a href="https://www.davidpeterwallisfreeborn.com/fun/berksons-paradox/" style="color:#2563eb;">View the latest version on David Freeborn's website</a>.
-  </footer>
 </body>
 </html>
